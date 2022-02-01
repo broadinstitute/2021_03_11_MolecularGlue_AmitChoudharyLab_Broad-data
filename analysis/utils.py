@@ -88,6 +88,23 @@ def concat_profiles_index(df1, df2):
     return df1
 
 
+def consensus(profiles_df, group_by_feature):
+    metadata_df = (
+        get_metadata(profiles_df)
+            .drop_duplicates(subset=[group_by_feature])
+    )
+
+    feature_cols = [group_by_feature] + get_featurecols(profiles_df)
+    profiles_df = profiles_df[feature_cols].groupby([group_by_feature]).median().reset_index()
+
+    profiles_df = (
+        metadata_df.merge(profiles_df, on='Metadata_broad_sample')
+            .drop(columns=['Metadata_Well'])
+    )
+
+    return profiles_df
+
+
 def percent_score(null_dist, corr_dist, how):
     """
     Calculates the Percent strong or percent recall scores
