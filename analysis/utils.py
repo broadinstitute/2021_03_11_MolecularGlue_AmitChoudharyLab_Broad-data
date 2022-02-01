@@ -49,6 +49,15 @@ def remove_negcon_empty_wells(df):
     return df
 
 
+def remove_all_control_empty_wells(df):
+    """return dataframe of treatment wells"""
+    df = (
+        df.query('Metadata_pert_type=="trt"')
+            .reset_index(drop=True)
+    )
+    return df
+
+
 def remove_empty_wells(df):
     """return dataframe of non-empty wells"""
     df = (
@@ -125,6 +134,29 @@ def corr_between_replicates(df, group_by_feature):
             np.fill_diagonal(corr, np.nan)
             replicate_corr.append(np.nanmedian(corr))  # median replicate correlation
     return replicate_corr
+
+
+def corr_between_replicates_df(df, group_by_feature):
+    """
+    Correlation between replicates
+    :param df: pd.DataFrame
+    :param group_by_feature: Feature name to group the data frame by
+    :return: Dataframe of correlation values and groups
+    """
+    replicate_corr_df = pd.DataFrame()
+    replicate_grouped = df.groupby(group_by_feature)
+    for name, group in replicate_grouped:
+        group_features = get_featuredata(group)
+        corr = np.corrcoef(group_features)
+        if len(group_features) == 1:  # If there is only one replicate on a plate
+            replicate_corr = np.nan
+        else:
+            np.fill_diagonal(corr, np.nan)
+            replicate_corr = np.nanmedian(corr)  # median replicate correlation
+        replicate_corr_df = replicate_corr_df.append({group_by_feature: name,
+                                                      'replicate_correlation': replicate_corr},
+                                                      ignore_index=True)
+    return replicate_corr_df
 
 
 def corr_between_non_replicates(df, n_samples, n_replicates, metadata_compound_name):
@@ -222,7 +254,7 @@ def draw_plates(df):
 
     cmap = LinearSegmentedColormap.from_list('Custom', colors, len(colors))
 
-    ax = sns.heatmap(wells_pivot, cmap=cmap, linewidths=.5, linecolor='lightgray', square=True)
+    ax = sns.heatmap(wells_pivot, cmap=cmap, linewidths=.5, linecolor='lightgray', square=True, cbar_kws={'shrink': 1/(2*n_cat), 'aspect': n_cat})
 
     colorbar = ax.collections[0].colorbar
 
@@ -259,7 +291,7 @@ def draw_any_plate(df, feature):
 
     cmap = LinearSegmentedColormap.from_list('Custom', colors, len(colors))
 
-    ax = sns.heatmap(wells_pivot, cmap=cmap, linewidths=.5, linecolor='lightgray', square=True)
+    ax = sns.heatmap(wells_pivot, cmap=cmap, linewidths=.5, linecolor='lightgray', square=True, cbar_kws={'shrink': 1/(2*n_cat), 'aspect': n_cat})
 
     colorbar = ax.collections[0].colorbar
 
